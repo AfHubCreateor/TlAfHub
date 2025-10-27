@@ -303,18 +303,44 @@ local function isMenuOpen()
 	return false
 end
 
--- Auto click in middle of the screen
+----------------------------------------------------
+-- 🔻 Auto Attack Toggle Logic (Fixed)
+----------------------------------------------------
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local autoAttackToggle = toggles["Auto Attack"]
+local autoAttackEnabled = false
+
+autoAttackToggle.MouseButton1Click:Connect(function()
+	autoAttackEnabled = not autoAttackEnabled
+end)
+
+local function getEquippedTool()
+	local char = LocalPlayer.Character
+	if not char then return nil end
+	for _, tool in ipairs(char:GetChildren()) do
+		if tool:IsA("Tool") then
+			return tool
+		end
+	end
+	return nil
+end
+
 task.spawn(function()
 	while true do
 		task.wait(0.08)
 		if autoAttackEnabled then
-			if not isMenuOpen() then
+			local tool = getEquippedTool()
+			if tool and (tool.ToolTip == "Melee" or tool.ToolTip == "Sword" or tool.ToolTip == "Gun" or tool:IsA("Tool")) then
 				pcall(function()
+					-- use tool:Activate() to simulate attack
+					tool:Activate()
+
+					-- Also simulate an actual click in the center of the screen
 					local viewport = workspace.CurrentCamera.ViewportSize
-					local center = Vector2.new(viewport.X / 2, viewport.Y / 2)
-					VirtualUser:Button1Down(center)
+					local centerX, centerY = viewport.X / 2, viewport.Y / 2
+					VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
 					task.wait(0.05)
-					VirtualUser:Button1Up(center)
+					VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
 				end)
 			end
 		end
