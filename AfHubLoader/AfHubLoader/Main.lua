@@ -272,37 +272,49 @@ spawn(function()
 end)
 
 ----------------------------------------------------
--- 🔻 Auto Attack Toggle Logic
+-- 🔻 Auto Attack (Middle Screen Click Logic)
 ----------------------------------------------------
 local autoAttackToggle = toggles["Auto Attack"]
 local autoAttackEnabled = false
 
+-- Detect Roblox menu and main menu states
+local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
+local VirtualUser = game:GetService("VirtualUser")
+
+-- Toggle
 autoAttackToggle.MouseButton1Click:Connect(function()
 	autoAttackEnabled = not autoAttackEnabled
 end)
 
-local function getEquippedTool()
-	local char = LocalPlayer.Character
-	if not char then return nil end
-	for _, tool in ipairs(char:GetChildren()) do
-		if tool:IsA("Tool") then
-			return tool
+-- Function to check if player is in Roblox menu or main menu
+local function isMenuOpen()
+	-- Roblox CoreGui menu open (Esc)
+	if GuiService.MenuIsOpen then return true end
+	-- Optional: if your game has a "MainMenu" GUI
+	local pg = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
+	if pg then
+		for _, g in ipairs(pg:GetChildren()) do
+			if g:IsA("ScreenGui") and g.Enabled and g.Name:lower():find("mainmenu") then
+				return true
+			end
 		end
 	end
-	return nil
+	return false
 end
 
+-- Auto click in middle of the screen
 task.spawn(function()
 	while true do
 		task.wait(0.08)
 		if autoAttackEnabled then
-			local tool = getEquippedTool()
-			if tool and (tool.ToolTip == "Melee" or tool.ToolTip == "Sword" or tool.ToolTip == "Gun" or tool:IsA("Tool")) then
+			if not isMenuOpen() then
 				pcall(function()
-					tool:Activate()
-					VirtualUser:Button1Down(Vector2.new(0, 0))
+					local viewport = workspace.CurrentCamera.ViewportSize
+					local center = Vector2.new(viewport.X / 2, viewport.Y / 2)
+					VirtualUser:Button1Down(center)
 					task.wait(0.05)
-					VirtualUser:Button1Up(Vector2.new(0, 0))
+					VirtualUser:Button1Up(center)
 				end)
 			end
 		end
